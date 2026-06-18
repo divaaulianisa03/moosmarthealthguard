@@ -1,0 +1,163 @@
+import { useState, useEffect } from "react";
+import axios from "axios";
+import KartuSapi from "./components/KartuSapi";
+import Grafik from "./components/Grafik";
+import Riwayat from "./components/Riwayat";
+import "./App.css";
+
+function App() {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedSapi, setSelectedSapi] = useState(null);
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [lastUpdate, setLastUpdate] = useState("");
+
+  const fetchData = async () => {
+    try {
+      const res = await axios.get("http://localhost/monitoring-sapi/api/semua_sensor.php");
+      setData(res.data.data);
+      setLastUpdate(new Date().toLocaleTimeString("id-ID"));
+    } catch (err) {
+      console.error("Gagal fetch data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const normal = data.filter(
+    d => d.status_suhu === "normal" && d.status_jantung === "normal" && d.level_stress === "tenang"
+  ).length;
+
+  const danger = data.filter(
+    d => d.status_suhu === "danger" || d.status_jantung === "danger" || d.level_stress === "stress"
+  ).length;
+
+  const warning = data.length - normal - danger;
+
+  return (
+    <div className="app">
+      <aside className="sidebar">
+        <div className="sidebar-logo" style={{ display: "flex", justifyContent: "center" }}>
+          <img
+            src="/logo.jpeg"
+            alt="MooSmartHealthGuard"
+            style={{
+              width: "120px",
+              height: "120px",
+              borderRadius: "50%",
+              objectFit: "cover",
+              border: "3px solid rgba(255,255,255,0.3)",
+            }}
+          />
+        </div>
+        <nav className="sidebar-nav">
+          <button
+            className={activeTab === "dashboard" ? "nav-item active" : "nav-item"}
+            onClick={() => setActiveTab("dashboard")}
+          >
+            Dashboard
+          </button>
+          <button
+            className={activeTab === "grafik" ? "nav-item active" : "nav-item"}
+            onClick={() => setActiveTab("grafik")}
+          >
+            Grafik
+          </button>
+          <button
+            className={activeTab === "riwayat" ? "nav-item active" : "nav-item"}
+            onClick={() => setActiveTab("riwayat")}
+          >
+            Riwayat
+          </button>
+        </nav>
+        <div className="sidebar-status">
+          <div className="status-dot normal"></div>
+          <span>Sistem aktif</span>
+        </div>
+      </aside>
+
+      <main className="main">
+        <div className="topbar">
+          <div>
+            <h1 className="page-title">
+              {activeTab === "dashboard" && "Dashboard Monitoring"}
+              {activeTab === "grafik" && "Grafik Sensor"}
+              {activeTab === "riwayat" && "Riwayat Data"}
+            </h1>
+            <p className="page-sub">Update terakhir: {lastUpdate}</p>
+          </div>
+          <button className="refresh-btn" onClick={fetchData}>
+            Refresh
+          </button>
+        </div>
+
+        {activeTab === "dashboard" && (
+          <>
+            <div className="stat-grid">
+              <div className="stat-card">
+                <div>
+                  <div className="stat-num">{data.length}</div>
+                  <div className="stat-label">Total Sapi</div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div>
+                  <div className="stat-num green-text">{normal}</div>
+                  <div className="stat-label">Normal</div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div>
+                  <div className="stat-num yellow-text">{warning}</div>
+                  <div className="stat-label">Waspada</div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div>
+                  <div className="stat-num red-text">{danger}</div>
+                  <div className="stat-label">Bahaya</div>
+                </div>
+              </div>
+            </div>
+
+            {danger > 0 && (
+              <div className="alert-banner">
+                Terdapat {danger} sapi dalam kondisi bahaya. Segera lakukan pemeriksaan.
+              </div>
+            )}
+
+            {loading ? (
+              <div className="loading">Memuat data...</div>
+            ) : (
+              <div className="kartu-grid">
+                {data.map(sapi => (
+                  <KartuSapi
+                    key={sapi.cow_id}
+                    sapi={sapi}
+                    onClick={() => {
+                      setSelectedSapi(sapi);
+                      setActiveTab("grafik");
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === "grafik" && (
+          <Grafik data={data} selectedSapi={selectedSapi} setSelectedSapi={setSelectedSapi} />
+        )}
+        {activeTab === "riwayat" && <Riwayat data={data} />}
+      </main>
+    </div>
+  );
+}
+
+export default App;

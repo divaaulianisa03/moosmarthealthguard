@@ -1,0 +1,62 @@
+function KartuSapi({ sapi, onClick }) {
+  const statusUtama =
+    sapi.status_suhu === "danger" || sapi.status_jantung === "danger" || sapi.level_stress === "stress"
+      ? "danger"
+      : sapi.status_suhu === "warning" || sapi.status_jantung === "warning" || sapi.level_stress === "waspada"
+      ? "warning"
+      : "normal";
+
+  const warna = { normal: "#4a7c2f", warning: "#d97706", danger: "#dc2626" };
+  const bg = { normal: "#f0fdf4", warning: "#fffbeb", danger: "#fef2f2" };
+  const label = { normal: "Normal", warning: "Waspada", danger: "Bahaya" };
+  const stressLabel = { tenang: "Tenang", waspada: "Waspada", stress: "Stress" };
+
+  return (
+    <div
+      className="kartu"
+      style={{ borderLeft: `4px solid ${warna[statusUtama]}`, background: bg[statusUtama] }}
+      onClick={onClick}
+    >
+      <div className="kartu-top">
+        <div>
+          <span className="cow-id">{sapi.cow_id}</span>
+          <h3 className="cow-nama">{sapi.nama}</h3>
+        </div>
+        <span className="badge" style={{ background: warna[statusUtama] }}>
+          {label[statusUtama]}
+        </span>
+      </div>
+
+      <div className="kartu-sensor">
+        <div className="sensor-box">
+          <div className="sensor-info">
+            <span className="sensor-label">Suhu Tubuh</span>
+            <span className="sensor-val">{sapi.suhu_celsius}°C</span>
+            <span className="sensor-st" style={{ color: warna[sapi.status_suhu] }}>
+              {label[sapi.status_suhu]}
+            </span>
+          </div>
+        </div>
+        <div className="sensor-box">
+          <div className="sensor-info">
+            <span className="sensor-label">Detak Jantung</span>
+            <span className="sensor-val">{sapi.detak_jantung_bpm} bpm</span>
+            <span className="sensor-st" style={{ color: warna[sapi.status_jantung] }}>
+              {label[sapi.status_jantung]}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="kartu-aktivitas">
+        <span>Tingkat Kestressan</span>
+        <span className="intensitas" style={{ color: warna[statusUtama === "danger" && sapi.level_stress === "stress" ? "danger" : sapi.level_stress === "waspada" ? "warning" : "normal"] }}>
+          {stressLabel[sapi.level_stress]}
+        </span>
+      </div>
+      <div className="kartu-footer">Klik untuk lihat grafik</div>
+    </div>
+  );
+}
+
+export default KartuSapi;
